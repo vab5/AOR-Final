@@ -166,8 +166,9 @@ if __name__ == "__main__":
 
     rrt_star = RRTStar(waypoints[0], waypoints[1], num_random_obstacles=0, map_size=[0.25, 0.25, 0.25])
 
+
     def animate(i):
-        global waypoint_index, segment_path, full_path, planning_complete
+        global waypoint_index, segment_path, full_path, planning_complete, last_goal_node
 
         if planning_complete:
             return
@@ -191,6 +192,7 @@ if __name__ == "__main__":
                 full_path.extend(segment_path)
                 rrt_star.draw_path()
                 rrt_star.goal_reached = True
+                last_goal_node = new_node  # <-- Save the node that reached the goal
 
         else:
             waypoint_index += 1
@@ -198,14 +200,18 @@ if __name__ == "__main__":
                 if full_path:
                     xs, ys, zs = zip(*full_path)
                     rrt_star.ax.plot(xs, ys, zs, color='g', linewidth=2, label='Full Path')
-                    plt.legend()
+                    handles, labels = rrt_star.ax.get_legend_handles_labels()
+                    rrt_star.ax.legend(dict(zip(labels, handles)).values(), dict(zip(labels, handles)).keys())
                     np.savetxt("results/final_path.txt", np.array(full_path), fmt="%.5f", header="x y z")
                 planning_complete = True
             else:
-                rrt_star.start = Node(*segment_path[-1])
+                rrt_star.start = last_goal_node  # Carry over the node, not just its position
+                rrt_star.start.parent = None
+                rrt_star.start.cost = 0
                 rrt_star.goal = Node(*waypoints[waypoint_index + 1])
                 rrt_star.node_list = [rrt_star.start]
                 rrt_star.goal_reached = False
+
 
     def generate_obstacles_at_midpoints(rrt): 
 
