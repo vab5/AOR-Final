@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import math
 import random
+import os
 
 # Node class representing a state in the space
 class Node:
@@ -29,7 +30,6 @@ class RRTStar:
         self.goal_reached = False
         self.goal_bias = 0.4
 
-        # Visualization setup (using 3D plot)
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, projection='3d')
         self.setup_visualization()
@@ -48,8 +48,17 @@ class RRTStar:
         self.obstacles.append((x, y, z, size))
 
     def setup_visualization(self):
-        self.ax.plot([self.start.x], [self.start.y], [self.start.z], 'bo', label='Start')
-        self.ax.plot([self.goal.x], [self.goal.y], [self.goal.z], 'ro', label='Goal')
+        for i, point in enumerate(waypoints):
+            if i == 0:
+                self.ax.plot([point[0]], [point[1]], [point[2]], 'bo', label='Start')
+                self.ax.text(point[0], point[1], point[2], f'Start', fontsize=8, color='blue')
+            elif i == len(waypoints) - 1:
+                self.ax.plot([point[0]], [point[1]], [point[2]], 'go', label='Goal')
+                self.ax.text(point[0], point[1], point[2], f'Goal', fontsize=8, color='green')
+            else:
+                self.ax.plot([point[0]], [point[1]], [point[2]], 'ro')
+                self.ax.text(point[0], point[1], point[2], f'P{i}', fontsize=8, color='red')
+
         self.ax.set_xlim(-self.map_size[0], self.map_size[0])
         self.ax.set_ylim(-self.map_size[1], self.map_size[1])
         self.ax.set_zlim(-self.map_size[2], 0)
@@ -141,10 +150,10 @@ class RRTStar:
 
 
 
-if __name__ == "__main__": 
 
+if __name__ == "__main__":
+    os.makedirs("results", exist_ok=True)
 
-    # Global variables for animation control
     waypoints = [
         [0, 0, -0.1],
         [0.05, -0.05, -0.11],
@@ -156,13 +165,6 @@ if __name__ == "__main__":
     planning_complete = False
 
     rrt_star = RRTStar(waypoints[0], waypoints[1], num_random_obstacles=0, map_size=[0.25, 0.25, 0.25])
-
-    # Optional: add a static obstacle
-    # mid_x = (waypoints[0][0] + waypoints[1][0]) / 2
-    # mid_y = (waypoints[0][1] + waypoints[1][1]) / 2
-    # mid_z = (waypoints[0][2] + waypoints[1][2]) / 2
-    # rrt_star.generate_obstacle(mid_x, mid_y, mid_z, 0.01)
-    # rrt_star.draw_obstacles()
 
     def animate(i):
         global waypoint_index, segment_path, full_path, planning_complete
@@ -185,7 +187,7 @@ if __name__ == "__main__":
             if rrt_star.reached_goal(new_node):
                 segment_path = rrt_star.generate_final_path(new_node)
                 if waypoint_index > 0:
-                    segment_path = segment_path[1:]  # Avoid duplicate
+                    segment_path = segment_path[1:]
                 full_path.extend(segment_path)
                 rrt_star.draw_path()
                 rrt_star.goal_reached = True
@@ -197,13 +199,27 @@ if __name__ == "__main__":
                     xs, ys, zs = zip(*full_path)
                     rrt_star.ax.plot(xs, ys, zs, color='g', linewidth=2, label='Full Path')
                     plt.legend()
+                    np.savetxt("results/final_path.txt", np.array(full_path), fmt="%.5f", header="x y z")
                 planning_complete = True
             else:
-                rrt_star.start = Node(*waypoints[waypoint_index])
+                rrt_star.start = Node(*segment_path[-1])
                 rrt_star.goal = Node(*waypoints[waypoint_index + 1])
                 rrt_star.node_list = [rrt_star.start]
                 rrt_star.goal_reached = False
 
+    def generate_obstacles_at_midpoints(rrt): 
+
+        for i in range(1, len(waypoints)): 
+
+            mid_x = (waypoints[i - 1][0] + waypoints[i][0]) / 2
+            mid_y = (waypoints[i - 1][1] + waypoints[i][1]) / 2
+            mid_z = (waypoints[i - 1][2] + waypoints[i][2]) / 2
+            rrt_star.generate_obstacle(mid_x, mid_y, mid_z, 0.015)
+
+        rrt_star.draw_obstacles()
+
+    generate_obstacles_at_midpoints(rrt_star)
+
     ani = animation.FuncAnimation(rrt_star.fig, animate, frames=rrt_star.max_iter * len(waypoints), interval=10, repeat=False)
-    ani.save('rrt_star_multi_segment.gif', writer='pillow', fps=30)
+    ani.save("results/rrt_star_multi_segment.gif", writer="pillow", fps=30)
     plt.show()
