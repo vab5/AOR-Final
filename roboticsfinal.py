@@ -173,6 +173,7 @@ class RRTStar:
         if self.path:
             self.ax.plot([x[0] for x in self.path], [x[1] for x in self.path], [x[2] for x in self.path], '-g', label='Path')
 
+
 # Animation function to run the RRT* iterations and plot in real-time
 def animate(i):
     if i < rrt_star.max_iter and not rrt_star.goal_reached:
@@ -192,10 +193,36 @@ def animate(i):
             rrt_star.draw_path()
             rrt_star.goal_reached = True  # Set the goal reached flag
 
+def plan_path(rrt_star, start, goal):
+    """Run RRT* from start to goal and return the final path."""
+    rrt_star.start = Node(*start)
+    rrt_star.goal = Node(*goal)
+    rrt_star.node_list = [rrt_star.start]
+    rrt_star.path = None
+    rrt_star.goal_reached = False
 
+    for i in range(rrt_star.max_iter):
+        rand_node = rrt_star.get_random_node()
+        nearest_node = rrt_star.get_nearest_node(rrt_star.node_list, rand_node)
+        new_node = rrt_star.steer(nearest_node, rand_node)
+
+        if rrt_star.is_collision_free(new_node):
+            neighbors = rrt_star.find_neighbors(new_node)
+            new_node = rrt_star.choose_parent(neighbors, nearest_node, new_node)
+            rrt_star.node_list.append(new_node)
+            rrt_star.rewire(new_node, neighbors)
+            rrt_star.draw_tree(new_node)
+
+        if rrt_star.reached_goal(new_node):
+            path = rrt_star.generate_final_path(new_node)
+            rrt_star.draw_path()
+            return path
+    return None  # If goal not reached
 
 
     # Main execution
+
+
 if __name__ == "__main__":
     start = [0, 0, -0.1]
     goal = [0.05, -0.05, -0.11]
@@ -206,11 +233,11 @@ if __name__ == "__main__":
 
 
     # add obstacles
-    mid_x = (start[0] + goal[0]) / 2
-    mid_y = (start[1] + goal[1]) / 2
-    mid_z = (start[2] + goal[2]) / 2
-    rrt_star.generate_obstacle(mid_x, mid_y, mid_z, 0.01)
-    rrt_star.draw_obstacles()
+    # mid_x = (start[0] + goal[0]) / 2
+    # mid_y = (start[1] + goal[1]) / 2
+    # mid_z = (start[2] + goal[2]) / 2
+    # rrt_star.generate_obstacle(mid_x, mid_y, mid_z, 0.01)
+    # rrt_star.draw_obstacles()
 
 
     # Create animation
