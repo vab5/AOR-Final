@@ -1,7 +1,5 @@
 # RRT-Based Path Planning for dVRK PSM Robot
 
-**Course**: CS 3891 – The Algorithms of Robotics  
-**Semester**: Spring 2025  
 **Authors**: Varun Bussa and Ron Asoulin-Handelman  
 **Date**: May 1st, 2025
 
@@ -89,4 +87,4 @@ ros2 run dvrk_python dvrk_arm_test.py
 
 ## Acknowledgements
 
-AI was used in this assignment. RRT started code was obtained from [this medium article](https://medium.com/@aggorjefferson/exploring-path-planning-with-rrt-and-visualization-in-python-cf5bd80a6cd6).
+AI was used in this assignment. 
